@@ -1,130 +1,113 @@
 # Code starts
 import requests
-import openai
 import sys
-#import torch
-#import black
-#import transformers
-from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
+
+#gui include
+from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-#import tensorflow as tf
+
+global window
+
+class settings():
+    def __init__(self):
+        self.title = "Gui Bot"
+
+        self.convTag_me = "Me :"
+        self.convTag_bot = "Bot :"
+
+        self.ApiKeyFile = "/home/saite/.bigdisk/Assistant/api_key.txt"
+
+        self.models = ["text-davinci-003","text-curie-001", "text-babbage-001","text-ada-001","davinici-instruct-beta",
+        "curie-instruct-beta","text-davinci-002","text-davinci-001"]
+        #presets for topics
+        self.preset1 = "You are the are a story writer. tell me a story of a hero running jobs in acyberpunkworld."
+        self.preset2 = "you are the head code develoveloper gone freelance, and i'm the paying customer"
+        self.preset3 = "you are the dungeon master of dungeons and dragons dice roll game."
+
+        self.preset4 = "you will emulate the complete game of the classic bbs game of legend of the red dragon." 
+        self.preset4 += "you will control and keep track of all my character inventory stats."
+        self.preset4 += "you will generate the battle sequences based om dice rolls"
+
+        self.agent = "text-davinci-003"
+        self.max_tokens = 1512
+        self.temperature = 0.6
+        self.top_p = 1.0
+        self.n = 1
 
 
-class MyTextEdit(QTextEdit):
-    enterPressed = pyqtSignal()  # Add the enterPressed signal here
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setMouseTracking(True)
-        self.setViewportMargins(0, 0, 0, 0)
-	
-	#preset prompts quick buttons for topic changes
-	self.preset1 = "You are the are a story writer. tell me a story of a hero running jobs in acyberpunkworld."
-
-	self.preset2 = "you are the head code develoveloper gone freelance, and i'm the paying customer"
-
-	self.preset3 = "you are the dungeon master of dungeons and dragons dice roll game."
-
-	self.preset4 = "you will emulate the complete game of the classic bbs game of legend of the red dragon."
-	self.preset4 += "you will control and keep track of all my character inventory stats."
-	self.preset4 += "you will generate the battle sequences based om dice rolls"
-	
     def setPreset(self, preset):
-	#personality button defaults
         if preset == "fantasy_story": 
-            #self.engine = "fantasy_story_model"
+            self.agent = "text-davinci-003"
             self.max_tokens = 1024
             self.temperature = 2.0
             self.top_p = 0.1
             self.n = 10
         elif preset == "science_story":
-            #self.engine = "science_story_model"
+            self.agent = "text-davinci-003"
             self.max_tokens = 1024
             self.temperature = 0.03
             self.top_p = 1.0
             self.n = 2
         elif preset == "code":
-            #self.engine = "code_model"
+            self.agent = "text-davinci-003"
             self.max_tokens = 1024
             self.temperature = 0.01
             self.top_p = 1
             self.n = 1
         elif preset == "conversation":
-            #self.engine = "conversation_model"
+            self.agent = "text-davinci-003"
             self.max_tokens = 1512
             self.temperature = 2.0
             self.top_p = 0.33
             self.n = 1
         elif preset == "custom":
-            #self.engine = "custom_model"
+            self.agent = "text-davinci-003"
             self.max_tokens = 2048
             self.temperature = 0.8
             self.top_p = 0.50
             self.n = 1
         else:
-            #self.engine = "davinci"
+
+#            window.modelSelect.setCurrentText("text-davinci-003")
+            self.agent = "text-davinci-003"
             self.max_tokens = 1512
             self.temperature = 0.6
             self.top_p = 1.0
             self.n = 1
 
+	#presets for personalities
+
     def aiPreset0(self, preset):
         self.topic_field.setText(self.preset1)
     def aiPreset1(self, preset):
-        self.topic_field.setText(self.preset2))
+        self.topic_field.setText(self.preset2)
     def aiPreset2(self, preset):
         self.topic_field.setText(self.preset3)
     def aiPreset3(self, preset):
-        self.topic_field.setText(self.preset4))
-
-    @pyqtSlot(QKeyEvent)
-    def keyPressEvent(self, event):
-#        if event.key() == Qt.Key_Return and not Qt.Key_Shift and not event.modifiers():
-        if event.key() == Qt.Key_Return and not event.modifiers() & Qt.ShiftModifier:
-            self.enterPressed.emit()  # Emit the signal here
-        else:
-            super().keyPressEvent(event)
-
-    def mousePressEvent(self, event):
-        self.__mousePressPos = None
-        self.__mouseMovePos = None
-        if event.button() == Qt.LeftButton:
-            self.__mousePressPos = event.globalPos()
-            self.__mouseMovePos = event.globalPos()
-
-    def mouseReleaseEvent(self, event):
-        if self.__mousePressPos is not None:
-            moved = event.globalPos() - self.__mousePressPos
-            if moved.manhattanLength() > 3:
-                event.ignore()
-                return
-
-    def mouseMoveEvent(self, event):
-        if event.buttons() == Qt.LeftButton:
-            curr_pos = self.viewport().mapFromGlobal(event.globalPos())
-            diff = curr_pos - self.viewport().mapFromGlobal(self.__mouseMovePos)
-            self.__mouseMovePos = event.globalPos()
-            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - diff.y())
+        self.topic_field.setText(self.preset4)
 
 class OpenAIWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
-    #has to be after the __init__ or api erases
+        settings().setPreset("default")
+        self.Settings = settings()    
+
 
     @pyqtSlot()
 
+    ################################
+    # button functions
+    ################################
     def clear_history(self):
         """Clears the text in the response field widget."""
         self.response_field.clear()
+
     def readFile(self, filename):
         with open(filename, 'r') as f:
             return f.readlines()
 
-
-   #fileattach function     
     def open_file_dialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.ReadOnly
@@ -132,7 +115,22 @@ class OpenAIWindow(QWidget):
         if file_name:
             # Set the text of the text box to the selected file name
             self.attachName.setText(file_name)
-   #post highlighting
+
+    ################################
+    # removes text selection or highlighted post
+    ################################
+    def remove_clicked(self):
+        cursor = self.response_field.textCursor()
+        if cursor.hasSelection():
+            cursor.removeSelectedText()
+        # Replace .hasSelectedText() with .textCursor().hasSelection()
+        elif self.response_field.textCursor().hasSelection():
+            # Replace .selectedText() with .textCursor().selectedText()
+            self.response_field.textCursor().removeSelectedText()
+
+    ################################
+    # post highlighting for removal
+    ################################
     def highlightPost(self):
         # Make sure the response_field widget is initialized
         if not self.response_field:
@@ -153,16 +151,6 @@ class OpenAIWindow(QWidget):
         self.response_field.setTextCursor(cursor)
     def highlightPostOnClick(self, event):
         self.highlightPost()
-    def remove_clicked(self):
-        # Replace .hasSelectedText() with .textCursor().hasSelection()
-        if self.response_field.textCursor().hasSelection():
-            # Replace .selectedText() with .textCursor().selectedText()
-            self.response_field.textCursor().removeSelectedText()
-
-    def remove_clicked(self):
-        cursor = self.response_field.textCursor()
-        if cursor.hasSelection():
-            cursor.removeSelectedText()
     #---------------------
     # this is the image generator
     #*----------------------
@@ -223,13 +211,28 @@ class OpenAIWindow(QWidget):
 #                    print("An error occurred while reading the file:", e)
 #                    self.attach_file = ""
         self.createHistory()
-        self.generateResponse()
+        self.generateResponseApi()
+
     def createHistory(self):
         data = self.input_field.toMarkdown()
         self.input_field.clear()
         current_text = self.response_field.toMarkdown()
         self.response_field.append(f"<span style='color: lightblue;'>{self.convTag_me}</span>" + data)
         self.sendBuffer = f"Topic-{self.topic_field.text()}\n{self.response_field.toMarkdown()}\n{self.attach_file}"        #f"User: {user_id}\n{prompt}\n{check_attach()}" 
+
+    def GetKey(self):
+        _ = self.readFile(settings().ApiKeyFile)
+        x = type(_) 
+        if type(_) is list:
+            _ = _[0]
+        if "\n" in _:
+            _ = (_.split('\n'))[0]
+        
+        if f'{_:.3}' == "sk-":
+            return _
+        else:
+            print("key invalid")
+            return None            
 
         
     def generateResponseLocal(self):    
@@ -250,114 +253,123 @@ class OpenAIWindow(QWidget):
         print(output_text)
         self.response_field.append(output_text)
 
-    def getKey(self):
-        # check if attached is checked
-	    with open("./api_key.txt", 'r') as f:
-	    	_ = f.readlines()
-	if f'_:3' = "sk_":
-		self.API_KEY = _
-		
+    def generateResponseApi(self):
+        #temporary fix
+        settings().setPreset("default")
 
-    def generateResponse(self):    
         try:
-            # Generate a response to the full prompt
-#            response = openai.Completion.create(
-#                engine="text-davinci-003",
-#                prompt=self.sendBuffer,
-#                max_tokens=self.max_tokens,
-#                temperature=self.temperature,
-#                top_p=self.top_p,
-#                n=self.n,
-#            )
-
-	    self.setKey
             ENDPOINT_URL = "https://api.openai.com/v1/completions"
             response = requests.post(
                 ENDPOINT_URL,
                 headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.API_KEY}",
-                },
-                json={
-                    "prompt": self.sendBuffer,
-                    "model":"text-davinci-003",
-                    #"model":"code-davinici-001",
-                    #"model":"text-ada-001",
-                   
-                    "max_tokens": self.max_tokens,
-                    "temperature": self.temperature,
-                    "top_p": self.top_p,
-                    "n": self.n,
-                },)
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {self.GetKey()}",
+                    },
+                    json={
+                        "prompt": self.sendBuffer,
+                        "model":  self.modelSelect.currentText(),
+                        "max_tokens": settings().max_tokens,
+                        "temperature": settings().temperature,
+                        "top_p": settings().top_p,
+                        "n": settings().n,
+                    },
+                )
 
 
-            # Set the response in the response widget
-            #self.response_field.append("<span style='color: blue;'><b><u>----------------------</b></u></span><br>")
-            #print(response["choices"][0]["text"])
-#            if response.json()["choices"][0]["text"] == ('choices'):
-#                print(response.json())
-#            else:
-            print(response.json()["choices"][0]["text"])
-            self.response_field.append("Bot :" + response.json()["choices"][0]["text"])
+            output = response.json()["choices"][0]["text"]
+            print(output)
+            #adding color to the output
+            self.addcolor(output)
+            #remove the top line and the one below will just output
+            #self.response_field.append("Bot :" + input)
+
         except Exception as e:
             # Handle the error here
             print(response.json())
             print(e)
+
+    def generateResponseLib(self):    
+        import openai
+    # Generate a response to the full prompt
+        openai.api_key = self.GetKey(self.Settings.ApiKeyFile)
+        response = openai.Completion.create(
+            engine=self.agent,
+            prompt=self.sendBuffer,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            top_p=self.top_p,
+            n=self.n
+            )
+        output = response.json()["choices"][0]["text"]
+        print(output)
+        #adding color to the output
+        self.addcolor(output)
+        #remove the top line and the one below will just output
+        #self.response_field.append("Bot :" + input)
+
+        
+    def addcolor(self, input):       
+        # Set the response in the response widget
+        self.response_field.append("<span style='color: blue;'><b><u>----------------------</b></u></span><br>")
+        self.response_field.append("Bot :" + input)
+        self.response_field.append("<span style='color: blue;'><b><u>----------------------</b></u></span><br>")
+    		
+
     def checkifImage(self):
         if self.image_button.toggled():
             self.generate_images()
         else:
-            self.generateResponse()
+            self.generateResponseApi()
 
 
     def initUI(self):
         #extra includes for chat
-        self.convTag_me = "Me :"
-        self.convTag_bot = "Bot :"
+        self.convTag_me =  settings().convTag_me
+        self.convTag_bot = settings().convTag_bot
         self.topic = "Topic: bot conversation history test"
-        # Create the input field, button, and response widget
-        self.setPreset("default")
+
+        # setting defaults values, to avoid not defined errors
+        settings().setPreset("default")
+
         #self.stacked_widget.setCurrentIndex(1)
         #self.setLayout(self.mainLayout)
 
+
+        ################################
+        # Setting up topic presets gui
+        ################################
         self.label_topic = QLabel("Topic:")
-        self.topic_field = QLineEdit(self.topic)
-        # user input
-        self.label_Input = QLabel("Input", self)
-        self.input_field = MyTextEdit(self)
-#        self.input_field.enterEvent(self.generate)
-        self.input_field.enterPressed.connect(lambda: self.generate())
-        self.label_Output = QLabel("History", self)
         self.preset0_button = QPushButton("writer", self)
         self.preset1_button = QPushButton("programer", self)
         self.preset2_button = QPushButton("rpg writter", self)
         self.preset3_button = QPushButton("....", self)
-        self.toolbar_layout = QHBoxLayout()
-        self.toolbar_layout.addWidget(self.label_Output)
-        self.toolbar_layout.addWidget(self.preset0_button)
-        self.toolbar_layout.addWidget(self.preset1_button)
-        self.toolbar_layout.addWidget(self.preset2_button)
-        self.toolbar_layout.addWidget(self.preset3_button)
+        #build its layout
+#        self.bodyLayout.addWidget(self.label_Output)
+        self.presetTopics_layout = QHBoxLayout()
+        self.presetTopics_layout.addWidget(self.label_topic)
+        self.presetTopics_layout.addWidget(self.preset0_button)
+        self.presetTopics_layout.addWidget(self.preset1_button)
+        self.presetTopics_layout.addWidget(self.preset2_button)
+        self.presetTopics_layout.addWidget(self.preset3_button)
+        #give them acttion
+        self.preset0_button.clicked.connect(settings().aiPreset0)
+        self.preset1_button.clicked.connect(settings().aiPreset1)
+        self.preset2_button.clicked.connect(settings().aiPreset2)
+        self.preset3_button.clicked.connect(settings().aiPreset3)
 
-        self.preset0_button.clicked.connect(self.aiPreset0)
-        self.preset1_button.clicked.connect(self.aiPreset1)
-        self.preset2_button.clicked.connect(self.aiPreset2)
-        self.preset3_button.clicked.connect(self.aiPreset3)
 
-        self.response_field = MyTextEdit(self)  ## custom version of the text box
-        #self.response_field = QTextEdit(self) ## origin version of the text box
-        self.response_field.setReadOnly(True)
-        #self.response_field.enterPressed(self.generate)
-        self.response_field.enterPressed.connect(lambda: self.generate())
- #       self.response_field.verticalScrollBar().setMinimumWidth(100)
 
+
+ 
+
+        ################################
+        # Setting up chat and history action buttons
+        ################################
         self.clear_button = QPushButton("Clear", self)
         self.remove_button = QPushButton("Remove", self)
         self.generate_button = QPushButton("&Send", self)
-        #create chat window features
+        #build the layout
         self.button_layout = QHBoxLayout()
-#        self.mainLayout.addWidget(self.label_Input)
-        self.button_layout.addWidget(self.label_Input)
         self.button_layout.addWidget(self.clear_button)
         self.button_layout.addWidget(self.remove_button)
         self.button_layout.addWidget(self.generate_button)
@@ -367,20 +379,37 @@ class OpenAIWindow(QWidget):
         self.generate_button.clicked.connect(self.generate)
 
 
-        # Create a check box and set its initial state to checked
+        ################################
+        # Setting up attachment gui
+        ################################
+        self.label_attach = QLabel("File:")
         self.attachName = QLineEdit("")
         self.browse_button = QPushButton("Select")
         self.browse_button.clicked.connect(self.open_file_dialog)
         self.attachFile = QCheckBox("Attach")
         self.LoadedFile = ""
         self.attachFile.setChecked(False)
-        # Create a horizontal layout and add the check box, browse button, and text box
+        #build its layout
         self.attach_layout = QHBoxLayout()
+        self.attach_layout.addWidget(self.label_attach)
         self.attach_layout.addWidget(self.attachName)
         self.attach_layout.addWidget(self.browse_button)
         self.attach_layout.addWidget(self.attachFile)
 
+        ################################
+        # setting up model select Gui
+        ################################
+        self.label_model = QLabel("Model:")
+        self.modelSelect = QComboBox()
+        self.modelSelect.addItems(settings().models)
+        #build its layout
+        self.modelSel_layout = QHBoxLayout()
+        self.modelSel_layout.addWidget(self.label_model)
+        self.modelSel_layout.addWidget(self.modelSelect)
 
+        ################################
+        # setting up personality presets
+        ################################
         self.fantasy_story_button = QToolButton()
         self.fantasy_story_button.setText("Fantasy")
         self.fantasy_story_button.setCheckable(True)
@@ -419,7 +448,7 @@ class OpenAIWindow(QWidget):
         self.code_button.toggled.connect(lambda: self.setPreset("code"))
         self.conversation_button.toggled.connect(lambda: self.setPreset("conversation"))
         self.default_button.toggled.connect(lambda: self.setPreset("default"))
-
+        #togggle switch effect
         self.buttonGroup = QButtonGroup()
         self.buttonGroup.setExclusive(True)
         self.buttonGroup.addButton(self.fantasy_story_button)
@@ -429,22 +458,76 @@ class OpenAIWindow(QWidget):
         self.buttonGroup.addButton(self.image_button)
         self.buttonGroup.addButton(self.default_button)
 
-        # Create the stacked widget and the two pages
-        self.stacked_widget = QStackedWidget()
-        self.page1 = QWidget()
-        self.page2 = QWidget()
 
-        # Add the pages to the stacked widget
-        self.stacked_widget.addWidget(self.page1)
-        self.stacked_widget.addWidget(self.page2)
+        
+        ################################
+        # Setting up input fields presets gui
+        ################################
+        self.label_topic = QLabel("Topic:")
+        self.topic_field = QLineEdit(self.topic)
+        #build its layout
+        self.topic_Layout = QHBoxLayout()
+#        self.topic_Layout.addWidget(self.label_topic)
+        self.topic_Layout.addWidget(self.topic_field)
+
+
+        ################################
+        # Setting up input fields presets gui
+        ################################
+        self.label_Output = QLabel("History", self)
+        self.label_Input = QLabel("Input", self)
+
+        self.input_field = MyTextEdit(self)
+        self.input_field.setMaximumHeight(50)
+        self.response_field = MyTextEdit(self)  ## custom version of the text box
+        self.response_field.setReadOnly(True)
+        #self.response_field = QTextEdit(self) ## origin version of the text box
+
+        #build its layout
+        self.bodyLayout = QVBoxLayout()
+        self.bodyLayout.addLayout(self.topic_Layout)
+        self.bodyLayout.addWidget(self.label_Output)
+        self.bodyLayout.addWidget(self.response_field)
+        self.bodyLayout.addLayout(self.button_layout)
+        self.bodyLayout.addWidget(self.label_Input)
+        self.bodyLayout.addWidget(self.input_field)
+        #give them action
+        self.input_field.enterPressed.connect(lambda: self.generate())
+        self.response_field.enterPressed.connect(lambda: self.generate())
+        #scroll bars were hard to grip, grab and scroll now
+        #self.response_field.verticalScrollBar().setMinimumWidth(100)
+
+        
+        
+
+        ################################
+        # Setting up the main layout
+        ################################
         self.mainLayout = QVBoxLayout(self)
+        self.mainLayout.addLayout(self.modelSel_layout)
         self.mainLayout.addLayout(self.attach_layout)
         self.mainLayout.addLayout(self.preset_layout)
-        self.mainLayout.addLayout(self.toolbar_layout)
-        self.mainLayout.addWidget(self.topic_field)
-        self.mainLayout.addWidget(self.response_field)
-        self.mainLayout.addLayout(self.button_layout)
-        self.mainLayout.addWidget(self.input_field)
+        self.mainLayout.addLayout(self.presetTopics_layout)
+
+        self.mainLayout.addLayout(self.bodyLayout)
+
+        #.layout = self.button_layout
+
+
+        ################################
+        # layout switching intended for settings
+        ################################
+        # Create the stacked widget and the two pages
+        
+        ################################################################
+        #   this area is unused layout switching code 
+        #   currently disbled had trouble using it
+        ################################################################
+
+
+#        self.setLayout(self.mainLayout)
+        #window.setLayout(self.mainLayout)
+        #self.setLayout = self.mainLayout 
 
     def loadPage2(self):
         self.label_title = QLabel("Title:")
@@ -452,8 +535,6 @@ class OpenAIWindow(QWidget):
         self.page2_layout.addWidget(self.label_title)
         # Set the layout of the second page
         self.page2.setLayout(self.page2_layout)
-
-
     def toolbar(self):
         # Create the switch button
         self.switch_button = QPushButton("Switch")
@@ -464,10 +545,6 @@ class OpenAIWindow(QWidget):
         self.layout.addWidget(self.switch_button)
         self.layout.addWidget(self.stacked_widget)
 
-        # Create a widget to hold the layout, and set it as the central widget
-        self.central_widget = QWidget()
-        self.central_widget.setLayout(self.layout)
-        self.setCentralWidget(self.central_widget)
 
     def switch_pages(self):
         # Toggle between the two pages
@@ -475,23 +552,57 @@ class OpenAIWindow(QWidget):
             self.stacked_widget.setCurrentIndex(1)
         else:
             self.stacked_widget.setCurrentIndex(0)
+            
+class MyTextEdit(QTextEdit):
+    enterPressed = pyqtSignal()  # Add the enterPressed signal here
 
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setMouseTracking(True)
+        self.setViewportMargins(0, 0, 0, 0)
+	
+    ################################
+    # this area is for checking if enter is pressed while 
+    # inputting something to save on hitting send
+    ################################
+    @pyqtSlot(QKeyEvent)
+    def keyPressEvent(self, event):
+#        if event.key() == Qt.Key_Return and not Qt.Key_Shift and not event.modifiers():
+        if event.key() == Qt.Key_Return and not event.modifiers() & Qt.ShiftModifier:
+            self.enterPressed.emit()  # Emit the signal here
+        else:
+            super().keyPressEvent(event)
 
+    ################################
+    # this area is for touch screen scrolling and highlighting
+    ################################
+    def mousePressEvent(self, event):
+        self.__mousePressPos = None
+        self.__mouseMovePos = None
+        if event.button() == Qt.LeftButton:
+            self.__mousePressPos = event.globalPos()
+            self.__mouseMovePos = event.globalPos()
+
+    def mouseReleaseEvent(self, event):
+        if self.__mousePressPos is not None:
+            moved = event.globalPos() - self.__mousePressPos
+            if moved.manhattanLength() > 3:
+                event.ignore()
+                return
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            curr_pos = self.viewport().mapFromGlobal(event.globalPos())
+            diff = curr_pos - self.viewport().mapFromGlobal(self.__mouseMovePos)
+            self.__mouseMovePos = event.globalPos()
+            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - diff.y())
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = OpenAIWindow()
+    window.setWindowTitle(settings().title)
     window.show()
     app.exec_()
 
 # Code ends
-
-
-
-
-
-
-
-
-
-
