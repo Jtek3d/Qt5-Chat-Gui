@@ -19,6 +19,65 @@ class MyTextEdit(QTextEdit):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setMouseTracking(True)
         self.setViewportMargins(0, 0, 0, 0)
+	
+	#preset prompts quick buttons for topic changes
+	self.preset1 = "You are the are a story writer. tell me a story of a hero running jobs in acyberpunkworld."
+
+	self.preset2 = "you are the head code develoveloper gone freelance, and i'm the paying customer"
+
+	self.preset3 = "you are the dungeon master of dungeons and dragons dice roll game."
+
+	self.preset4 = "you will emulate the complete game of the classic bbs game of legend of the red dragon."
+	self.preset4 += "you will control and keep track of all my character inventory stats."
+	self.preset4 += "you will generate the battle sequences based om dice rolls"
+	
+    def setPreset(self, preset):
+	#personality button defaults
+        if preset == "fantasy_story": 
+            #self.engine = "fantasy_story_model"
+            self.max_tokens = 1024
+            self.temperature = 2.0
+            self.top_p = 0.1
+            self.n = 10
+        elif preset == "science_story":
+            #self.engine = "science_story_model"
+            self.max_tokens = 1024
+            self.temperature = 0.03
+            self.top_p = 1.0
+            self.n = 2
+        elif preset == "code":
+            #self.engine = "code_model"
+            self.max_tokens = 1024
+            self.temperature = 0.01
+            self.top_p = 1
+            self.n = 1
+        elif preset == "conversation":
+            #self.engine = "conversation_model"
+            self.max_tokens = 1512
+            self.temperature = 2.0
+            self.top_p = 0.33
+            self.n = 1
+        elif preset == "custom":
+            #self.engine = "custom_model"
+            self.max_tokens = 2048
+            self.temperature = 0.8
+            self.top_p = 0.50
+            self.n = 1
+        else:
+            #self.engine = "davinci"
+            self.max_tokens = 1512
+            self.temperature = 0.6
+            self.top_p = 1.0
+            self.n = 1
+
+    def aiPreset0(self, preset):
+        self.topic_field.setText(self.preset1)
+    def aiPreset1(self, preset):
+        self.topic_field.setText(self.preset2))
+    def aiPreset2(self, preset):
+        self.topic_field.setText(self.preset3)
+    def aiPreset3(self, preset):
+        self.topic_field.setText(self.preset4))
 
     @pyqtSlot(QKeyEvent)
     def keyPressEvent(self, event):
@@ -144,43 +203,6 @@ class OpenAIWindow(QWidget):
     #--------------------------
     # end img gen
     #--------------------------
-    def setPreset(self, preset):
-        if preset == "fantasy_story":
-            #self.engine = "fantasy_story_model"
-            self.max_tokens = 1024
-            self.temperature = 2.0
-            self.top_p = 0.1
-            self.n = 10
-        elif preset == "science_story":
-            #self.engine = "science_story_model"
-            self.max_tokens = 1024
-            self.temperature = 0.03
-            self.top_p = 1.0
-            self.n = 2
-        elif preset == "code":
-            #self.engine = "code_model"
-            self.max_tokens = 1024
-            self.temperature = 0.01
-            self.top_p = 1
-            self.n = 1
-        elif preset == "conversation":
-            #self.engine = "conversation_model"
-            self.max_tokens = 1512
-            self.temperature = 2.0
-            self.top_p = 0.33
-            self.n = 1
-        elif preset == "custom":
-            #self.engine = "custom_model"
-            self.max_tokens = 2048
-            self.temperature = 0.8
-            self.top_p = 0.50
-            self.n = 1
-        else:
-            #self.engine = "davinci"
-            self.max_tokens = 1512
-            self.temperature = 0.6
-            self.top_p = 1.0
-            self.n = 1
 
 
     @pyqtSlot()
@@ -209,8 +231,8 @@ class OpenAIWindow(QWidget):
         self.response_field.append(f"<span style='color: lightblue;'>{self.convTag_me}</span>" + data)
         self.sendBuffer = f"Topic-{self.topic_field.text()}\n{self.response_field.toMarkdown()}\n{self.attach_file}"        #f"User: {user_id}\n{prompt}\n{check_attach()}" 
 
-        # Set the preset to the default value
-    def generateResponsez(self):    
+        
+    def generateResponseLocal(self):    
         model = transformers.TFGPT2Model.from_pretrained("./ggml-model-q4_1.bin")
 #        model = transformers.TFGPT2Model.from_pretrained("./model.bin")
         model.to(torch.device("cuda"))
@@ -228,10 +250,13 @@ class OpenAIWindow(QWidget):
         print(output_text)
         self.response_field.append(output_text)
 
-    def setKey(self):
+    def getKey(self):
         # check if attached is checked
 	    with open("./api_key.txt", 'r') as f:
-	    	self.API_KEY = f.readlines()
+	    	_ = f.readlines()
+	if f'_:3' = "sk_":
+		self.API_KEY = _
+		
 
     def generateResponse(self):    
         try:
@@ -412,22 +437,14 @@ class OpenAIWindow(QWidget):
         # Add the pages to the stacked widget
         self.stacked_widget.addWidget(self.page1)
         self.stacked_widget.addWidget(self.page2)
-        #self.toolbar()
         self.mainLayout = QVBoxLayout(self)
         self.mainLayout.addLayout(self.attach_layout)
         self.mainLayout.addLayout(self.preset_layout)
         self.mainLayout.addLayout(self.toolbar_layout)
         self.mainLayout.addWidget(self.topic_field)
-        #self.mainLayout.addWidget(self.label_Output)
-        #self.mainLayout.addLayout(self.toolbar_layout)
         self.mainLayout.addWidget(self.response_field)
         self.mainLayout.addLayout(self.button_layout)
         self.mainLayout.addWidget(self.input_field)
-#        self.page1.setLayout(self.mainLayout)
-#        self.stacked_widget.setLayout(self.page1)
-        # Set the layout of the window
-        #self.page1.setLayout(self.mainLayout)
-        # Set the layout of the first page
 
     def loadPage2(self):
         self.label_title = QLabel("Title:")
@@ -436,14 +453,6 @@ class OpenAIWindow(QWidget):
         # Set the layout of the second page
         self.page2.setLayout(self.page2_layout)
 
-    def aiPreset0(self, preset):
-        self.topic_field.setText("You are the are a story writer. tell me a story of a hero running jobs in acyberpunkwrld.)
-    def aiPreset1(self, preset):
-        self.topic_field.setText("you are the head code develoveloper gone freelance, and i'm the paying customer")
-    def aiPreset2(self, preset):
-        self.topic_field.setText("you are the dungeon master of dungeons and dragons dice roll game.")
-    def aiPreset3(self, preset):
-        self.topic_field.setText("you will emulate the complete game of the classic bbs game of legend of the red dragon. you will control and keep track of all my character inventory stats and you will generate the battle sequences based om dice rolls")
 
     def toolbar(self):
         # Create the switch button
