@@ -1,15 +1,22 @@
 # Multi/os use gui, for openai chat bots
 the plan i had with this:
    
-a useful chat bot usable on various devices. 
+a useful chat bot usable on most devices.
+   in raw form only needs internet python and qt5 library.
+   working on local models as to not need internet. this should be quick when i attack it.
+
 on android its useful speech to text, using the android gboard text tool built in.
-working on that integration as well.
-have voice speech and speech to text in mind.
+working on that integration as well. I have custom voice speech and speech to text in mind.
+
 right now it uses premade models.
 planing on integrating my own model when i get it's training to be more predictable. fun training a new model.
-   
+
+bloated for looks, but i can release a lite hud version, maybe even just do settings on this one to toggle ui visuals
+
 features:
--run on any os that runs os, it uses python qt5.  
+-run on any os that runs os, it uses python qt5. using api mode.
+   if its a problem the library generation can be removed,
+       then qt5 should be the only dependency
 -easily runs on my linux, windows or android 
   prosibly even oculus being android based(hmm), 
   would have to clean the ui easily done tho 
