@@ -8,12 +8,19 @@ the plan i had with this:
    planing on integrating my own model when i get it's training to be more predictable. fun training a new model.
    
    features:
-   :run on any os that runs os, it uses qt5.     -it has mutliple directions to go with the responeses some use libraries some are api's it's setting based
-   :has presonality presets,      -different model's/temps. so on semi templated in the code. may move to seperate file soon
-   :has a topic bar
-   :has presets for the the topics
-   :has temporary history
+   :run on any os that runs os, it uses python qt5.  
+   :easily runs on my linux, windows or android 
+      prosibly even oculus being android based(hmm), 
+      would have to clean the ui easily done tho 
    
-   :was designed for touch scrolling but it fights with the data selection
+   :generated text using the openai library or api, 
+   :testing using alpaca, as well as one of the models i'm training.
+   :differnt model selection divinci, ada so on
+   :has presonality presets, temperture, top_k, legnth changes.
+   :has a topic bar as well as presets
+
+   :has temporary history easily set up for file history
+   
+   :was designed for mouse drag/touch drag scrolling
    
    
