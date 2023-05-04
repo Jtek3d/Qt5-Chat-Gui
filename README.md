@@ -2,7 +2,8 @@
 the plan i had with this:
    
    a useful chat bot usable on various devices. 
-   on android its useful with the keyboard stt. working on that integration as well.
+   on android its useful speech to text, using the android gboard text tool built in.
+   working on that integration as well.
    have voice speech and speech to text in mind.
    right now it uses premade models.
    planing on integrating my own model when i get it's training to be more predictable. fun training a new model.
