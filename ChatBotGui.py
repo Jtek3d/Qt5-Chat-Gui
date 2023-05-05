@@ -1,3 +1,6 @@
+#  i don't work on it much and it's far from where i want it it but it's usuable
+#
+#
 # Code starts
 import requests
 import sys
